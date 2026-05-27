@@ -61,3 +61,19 @@ pub fn require_allowed_token<'a>(
         Err(ContractError::InvalidToken)
     }
 }
+
+/// Require that at least `admin_threshold` of the provided signers are admins.
+pub fn require_admin_approval(env: &Env, signers: &soroban_sdk::Vec<Address>) -> Result<(), ContractError> {
+    let cfg = config(env);
+    let mut count: u32 = 0;
+    for signer in signers.iter() {
+        if cfg.admins.iter().any(|a| a == signer) {
+            signer.require_auth();
+            count += 1;
+        }
+    }
+    if count < cfg.admin_threshold {
+        return Err(ContractError::UnauthorizedCaller);
+    }
+    Ok(())
+}

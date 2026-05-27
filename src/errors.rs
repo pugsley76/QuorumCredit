@@ -57,4 +57,6 @@ pub enum ContractError {
     WithdrawalNotQueued = 47,
     /// Partial withdrawal amount exceeds the 50% cap.
     PartialWithdrawalExceedsCap = 48,
+    /// Issue #632: Cross-chain vouch attempted without bridge validation.
+    BridgeNotValidated = 49,
 }

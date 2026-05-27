@@ -2,7 +2,7 @@ extern crate alloc;
 
 use crate::errors::ContractError;
 use crate::helpers::{
-    has_active_loan, require_allowed_token, require_not_paused, require_positive_amount,
+    has_active_loan, require_admin_approval, require_allowed_token, require_not_paused, require_positive_amount,
 };
 use crate::types::{
     DataKey, QueuedWithdrawal, VouchHistoryEntry, VouchRecord,
@@ -51,10 +51,47 @@ pub fn vouch(
     stake: i128,
     token: Address,
 ) -> Result<(), ContractError> {
+    vouch_with_chain(env, voucher, borrower, stake, token, 0)
+}
+
+/// Vouch with cross-chain support. chain_id=0 means native Stellar.
+/// For non-zero chain_id, the voucher must have been bridge-validated first.
+pub fn vouch_cross_chain(
+    env: Env,
+    voucher: Address,
+    borrower: Address,
+    stake: i128,
+    token: Address,
+    chain_id: u32,
+) -> Result<(), ContractError> {
+    vouch_with_chain(env, voucher, borrower, stake, token, chain_id)
+}
+
+fn vouch_with_chain(
+    env: Env,
+    voucher: Address,
+    borrower: Address,
+    stake: i128,
+    token: Address,
+    chain_id: u32,
+) -> Result<(), ContractError> {
     voucher.require_auth();
     require_not_paused(&env)?;
+
+    // Bridge validation: non-native chain vouches require prior bridge validation
+    if chain_id != 0 {
+        let validated: bool = env
+            .storage()
+            .persistent()
+            .get(&DataKey::BridgeValidated(voucher.clone(), chain_id))
+            .unwrap_or(false);
+        if !validated {
+            return Err(ContractError::BridgeNotValidated);
+        }
+    }
+
     let cfg = VouchConfig::load(&env);
-    do_vouch(&env, &cfg, voucher, borrower, stake, token)
+    do_vouch(&env, &cfg, voucher, borrower, stake, token, chain_id)
 }
 
 fn validate_vouch<'a>(
@@ -143,6 +180,7 @@ fn commit_vouch(
     borrower: Address,
     stake: i128,
     token: Address,
+    chain_id: u32,
     mut vouches: Vec<VouchRecord>,
 ) -> Result<(), ContractError> {
     let contract = env.current_contract_address();
@@ -178,6 +216,7 @@ fn commit_vouch(
         token: token.clone(),
         expiry_timestamp: None,
         delegate: None,
+        chain_id,
     });
 
     env.storage()
@@ -226,9 +265,10 @@ fn do_vouch(
     borrower: Address,
     stake: i128,
     token: Address,
+    chain_id: u32,
 ) -> Result<(), ContractError> {
     let (token_client, vouches) = validate_vouch(env, cfg, &voucher, &borrower, stake, &token)?;
-    commit_vouch(env, &token_client, voucher, borrower, stake, token, vouches)
+    commit_vouch(env, &token_client, voucher, borrower, stake, token, chain_id, vouches)
 }
 
 pub fn batch_vouch(
@@ -264,7 +304,7 @@ pub fn batch_vouch(
             .persistent()
             .get(&DataKey::Vouches(borrower.clone()))
             .unwrap_or(Vec::new(&env));
-        commit_vouch(&env, &token_client, voucher.clone(), borrower, stake, token.clone(), vouches)?;
+        commit_vouch(&env, &token_client, voucher.clone(), borrower, stake, token.clone(), 0, vouches)?;
     }
 
     Ok(())
@@ -739,4 +779,34 @@ fn distribute_penalty(
             token_client.transfer(&contract, &vr.voucher, &share);
         }
     }
+}
+
+// ── Issue #632: Cross-Chain Bridge Validation ─────────────────────────────────
+
+/// Admin-callable: mark a voucher as bridge-validated for a given chain_id.
+/// Must be called before the voucher can submit a cross-chain vouch.
+pub fn set_bridge_validated(
+    env: Env,
+    admin_signers: Vec<Address>,
+    voucher: Address,
+    chain_id: u32,
+    validated: bool,
+) -> Result<(), ContractError> {
+    crate::helpers::require_admin_approval(&env, &admin_signers)?;
+    env.storage()
+        .persistent()
+        .set(&DataKey::BridgeValidated(voucher.clone(), chain_id), &validated);
+    env.events().publish(
+        (symbol_short!("bridge"), symbol_short!("valid")),
+        (voucher, chain_id, validated),
+    );
+    Ok(())
+}
+
+/// Query whether a voucher is bridge-validated for a given chain_id.
+pub fn is_bridge_validated(env: Env, voucher: Address, chain_id: u32) -> bool {
+    env.storage()
+        .persistent()
+        .get(&DataKey::BridgeValidated(voucher, chain_id))
+        .unwrap_or(false)
 }
