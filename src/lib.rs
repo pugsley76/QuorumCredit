@@ -2,6 +2,7 @@
 
 mod errors;
 mod helpers;
+mod oracle;
 mod types;
 mod vouch;
 
