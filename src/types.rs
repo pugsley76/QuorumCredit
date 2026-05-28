@@ -224,6 +224,12 @@ pub enum DataKey {
     StakingDerivative(Address, Address),
     // #637: Fraud Detection
     VoucherFraudScore(Address),
+    // #667: Oracle address for repayment verification
+    OracleAddress,
+    // #667: External credit score per borrower
+    ExternalCreditScore(Address),
+    // #666: Escrowed repayment amount per borrower (held pending oracle verification)
+    EscrowAmount(Address),
 }
 
 // ── Governance ────────────────────────────────────────────────────────────────
@@ -641,3 +647,17 @@ pub const FRAUD_SCORE_HIGH_THRESHOLD: u32 = 70;
 pub const FRAUD_SCORE_MAX: u32 = 100;
 pub const FRAUD_SCORE_DEFAULT_WEIGHT: u32 = 20;
 pub const FRAUD_SCORE_CONCENTRATION_WEIGHT: u32 = 10;
+
+// ── #667: External Credit Score ───────────────────────────────────────────────
+
+/// Credit score record pushed by a trusted oracle.
+#[contracttype]
+#[derive(Clone)]
+pub struct ExternalCreditScore {
+    /// Score in range 0–1000.
+    pub score: u32,
+    /// Ledger timestamp when this score was last updated.
+    pub updated_at: u64,
+    /// Oracle address that submitted this score.
+    pub oracle: Address,
+}
