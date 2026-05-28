@@ -38,33 +38,34 @@ pub enum ContractError {
     SlashAlreadyExecuted = 33,
     LoanBelowMinAmount = 34,
     QuorumNotMet = 35,
-    MaxVouchersPerBorrowerExceeded = 36,
-    InsufficientVoucherBalance = 37,
-    SelfVouchNotAllowed = 38,
-    DuplicateToken = 39,
-    InvalidAdminThreshold = 40,
-    InsufficientYieldReserve = 41,
-    ReminderAlreadySent = 42,
+    DelayNotElapsed = 36,
+    MaxVouchersPerBorrowerExceeded = 37,
+    InsufficientVoucherBalance = 38,
+    SelfVouchNotAllowed = 39,
+    DuplicateToken = 40,
+    InvalidAdminThreshold = 41,
+    InsufficientYieldReserve = 42,
+    ReminderAlreadySent = 43,
     /// Insurance pool has no funds to cover the claim.
-    InsurancePoolEmpty = 43,
+    InsurancePoolEmpty = 44,
     /// Insurance claim already made for this loan.
-    InsuranceClaimAlreadyMade = 44,
+    InsuranceClaimAlreadyMade = 45,
     /// Basis points value is invalid (must be 0–10000).
-    InvalidBps = 45,
+    InvalidBps = 46,
     /// Withdrawal request already queued for this voucher/borrower pair.
     WithdrawalAlreadyQueued = 46,
     /// No queued withdrawal found for this voucher/borrower pair.
     WithdrawalNotQueued = 47,
     /// Partial withdrawal amount exceeds the 50% cap.
     PartialWithdrawalExceedsCap = 48,
-    /// Credential not found for the given holder.
-    CredentialNotFound = 49,
-    /// Credential has already been revoked (permanent; cannot be re-activated).
-    CredentialAlreadyRevoked = 50,
-    /// Credential is already in the requested status.
-    CredentialStatusUnchanged = 51,
-    /// Reentrancy detected: a state-mutating call is already in progress.
-    Reentrancy = 52,
-    /// Credential has expired.
-    CredentialExpired = 53,
+    /// Borrower was slashed too recently; slash cooldown is still active.
+    SlashCooldownActive = 49,
+    /// Caller is not an admin or protocol-token holder allowed to govern.
+    NotGovernanceParticipant = 50,
+    /// Governance action is not allowed after the voting period has ended.
+    VotingPeriodEnded = 51,
+    /// Governance proposal was not found.
+    ProposalNotFound = 52,
+    /// Governance proposal was already finalized.
+    ProposalAlreadyFinalized = 53,
 }
