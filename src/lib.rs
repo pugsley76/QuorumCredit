@@ -1,6 +1,7 @@
 #![no_std]
 
 mod admin;
+mod commitment_validator;
 mod errors;
 mod governance;
 mod helpers;

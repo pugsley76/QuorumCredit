@@ -6,6 +6,7 @@ use soroban_sdk::{
 
 pub mod admin;
 pub mod benchmarks;
+pub mod commitment_validator;
 pub mod errors;
 pub mod fraud_detection;
 pub mod governance;
