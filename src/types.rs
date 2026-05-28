@@ -105,6 +105,9 @@ pub const MAX_DYNAMIC_SLASH_BPS: i128 = 7_500;
 /// Health threshold below which slash penalty increases, in basis points (8000 = 80%).
 pub const HEALTH_THRESHOLD_BPS: i128 = 8_000;
 
+/// Default slash delay period to allow for disputes, in seconds (7 days).
+pub const DEFAULT_SLASH_DELAY_SECONDS: u64 = 7 * 24 * 60 * 60;
+
 // ── Loan Extension ────────────────────────────────────────────────────────────
 
 /// A pending loan extension request. Created by the borrower; approved by vouchers.
@@ -201,6 +204,7 @@ pub enum DataKey {
     InsuranceVoucherClaim(u64, Address), // (loan_id, voucher) → i128 amount already claimed
     VouchHistory(Address, Address, Address), // (borrower, voucher, token) → Vec<VouchHistoryEntry>
     VouchDelegation(Address, Address, Address), // (borrower, original_voucher, token) → Address (delegate)
+    PendingSlashExecution(Address), // borrower → PendingSlashRecord
     YieldReserve,            // i128 balance of the yield reserve
     SlashEscrow(Address),    // borrower → (i128 amount, u64 release_timestamp)
     SlashAudit(Address),     // borrower → SlashRecord (latest slash for borrower)
