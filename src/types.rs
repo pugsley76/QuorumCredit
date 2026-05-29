@@ -292,6 +292,14 @@ pub enum DataKey {
     VoucherInsurance(Address, Address),
     /// Cross-chain bridge validation status: (voucher, chain_id) → bool.
     BridgeValidated(Address, u32),
+    /// Issue #687: admin removal proposal id → AdminRemovalProposal
+    AdminRemovalProposal(u64),
+    /// Issue #687: monotonically increasing admin removal proposal counter
+    AdminRemovalProposalCounter,
+    /// Issue #686: accumulated admin compensation pool balance (i128 stroops)
+    AdminCompensation,
+    /// Issue #686: last compensation claim timestamp per admin address
+    AdminLastClaim(Address),
 }
 
 // ── Governance ────────────────────────────────────────────────────────────────
@@ -670,6 +678,28 @@ pub struct AdminActionProposal {
     pub approvals: Vec<Address>,
     pub created_at: u64,
     pub executed: bool,
+}
+
+/// Issue #687: Governance proposal to remove a compromised admin address.
+/// Passes when `approve_votes >= Config.removal_vote_threshold`.
+#[contracttype]
+#[derive(Clone)]
+pub struct AdminRemovalProposal {
+    pub id: u64,
+    /// Admin address to be removed if the proposal passes.
+    pub admin_to_remove: Address,
+    /// Address that created the proposal (must be a governance participant).
+    pub proposer: Address,
+    /// Number of approve votes cast so far.
+    pub approve_votes: u32,
+    /// Number of reject votes cast so far.
+    pub reject_votes: u32,
+    /// Addresses that have already voted (prevent double-voting).
+    pub voters: Vec<Address>,
+    /// Ledger timestamp when the proposal was created.
+    pub proposed_at: u64,
+    /// True once the proposal has been finalized (admin removed or rejected).
+    pub finalized: bool,
 }
 
 // ── Pagination ────────────────────────────────────────────────────────────────
