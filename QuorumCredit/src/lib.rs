@@ -110,6 +110,8 @@ mod loan_health_test;
 mod vouch_global_cooldown_test;
 #[cfg(test)]
 mod stake_decay_test;
+#[cfg(test)]
+mod vouch_conditions_test;
 
 pub use errors::ContractError;
 pub use types::*;
@@ -190,6 +192,18 @@ impl QuorumCreditContract {
         sector: soroban_sdk::String,
     ) -> Result<(), ContractError> {
         vouch::vouch_with_sector(env, voucher, borrower, stake, token, sector)
+    }
+
+    /// Vouch with conditions restricting which loans this stake backs.
+    pub fn vouch_with_conditions(
+        env: Env,
+        voucher: Address,
+        borrower: Address,
+        stake: i128,
+        token: Address,
+        conditions: VouchConditions,
+    ) -> Result<(), ContractError> {
+        vouch::vouch_with_conditions(env, voucher, borrower, stake, token, conditions)
     }
 
     pub fn batch_vouch(

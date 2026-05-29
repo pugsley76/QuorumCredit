@@ -3,7 +3,7 @@ use crate::helpers::{
     extend_ttl, has_active_loan, require_allowed_token, require_not_paused, 
     require_not_paused_for, require_positive_amount,
 };
-use crate::types::{DataKey, PauseFlag, VouchRecord, MAX_VOUCH_DEPTH};
+use crate::types::{DataKey, PauseFlag, VouchConditions, VouchRecord, MAX_VOUCH_DEPTH};
 use soroban_sdk::{panic_with_error, symbol_short, Address, Env, Vec};
 
 // Task 3: Circular Vouch Detection - Detect circular vouching patterns
@@ -95,7 +95,7 @@ pub fn vouch(
 
     let sector = soroban_sdk::String::from_str(&env, "");
     check_and_update_cooldown(&env, &voucher)?;
-    do_vouch(&env, voucher, borrower, stake, token, sector)
+    do_vouch(&env, voucher, borrower, stake, token, sector, None)
 }
 
 // #642: vouch with explicit sector for diversification enforcement
@@ -128,7 +128,41 @@ pub fn vouch_with_sector(
     }
 
     check_and_update_cooldown(&env, &voucher)?;
-    do_vouch(&env, voucher, borrower, stake, token, sector)
+    do_vouch(&env, voucher, borrower, stake, token, sector, None)
+}
+
+/// Vouch with optional conditions restricting which loans this stake backs.
+pub fn vouch_with_conditions(
+    env: Env,
+    voucher: Address,
+    borrower: Address,
+    stake: i128,
+    token: Address,
+    conditions: VouchConditions,
+) -> Result<(), ContractError> {
+    voucher.require_auth();
+    require_not_paused(&env)?;
+    require_not_paused_for(&env, PauseFlag::Vouch)?;
+
+    let whitelist_enabled: bool = env
+        .storage()
+        .instance()
+        .get(&DataKey::VoucherWhitelistEnabled)
+        .unwrap_or(false);
+    if whitelist_enabled {
+        let whitelisted: bool = env
+            .storage()
+            .persistent()
+            .get(&DataKey::VoucherWhitelist(voucher.clone()))
+            .unwrap_or(false);
+        if !whitelisted {
+            return Err(ContractError::VoucherNotWhitelisted);
+        }
+    }
+
+    check_and_update_cooldown(&env, &voucher)?;
+    let sector = soroban_sdk::String::from_str(&env, "");
+    do_vouch(&env, voucher, borrower, stake, token, sector, Some(conditions))
 }
 
 /// Check and enforce the per-voucher global cooldown.
@@ -158,6 +192,7 @@ fn do_vouch(
     stake: i128,
     token: Address,
     sector: soroban_sdk::String,
+    conditions: Option<VouchConditions>,
 ) -> Result<(), ContractError> {
     // Validate numeric input: stake must be strictly positive.
     require_positive_amount(env, stake)?;
@@ -270,6 +305,7 @@ fn do_vouch(
         vouch_timestamp: env.ledger().timestamp(),
         token: token.clone(),
         sector: sector.clone(),
+        conditions,
     });
     env.storage()
         .persistent()
@@ -309,7 +345,7 @@ pub fn batch_vouch(
         let borrower = borrowers.get(i).unwrap();
         let stake = stakes.get(i).unwrap();
         let sector = soroban_sdk::String::from_str(&env, "");
-        do_vouch(&env, voucher.clone(), borrower, stake, token.clone(), sector)?;
+        do_vouch(&env, voucher.clone(), borrower, stake, token.clone(), sector, None)?;
     }
 
     Ok(())

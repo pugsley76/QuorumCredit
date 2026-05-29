@@ -471,6 +471,21 @@ pub struct VouchRecord {
     pub vouch_timestamp: u64, // ledger timestamp when vouch was created; immutable after set
     pub token: Address,       // token this stake is denominated in
     pub sector: soroban_sdk::String, // #642: sector/region of the voucher for diversification
+    /// Optional conditions the voucher places on this vouch.
+    /// When set, the vouch only counts toward loan eligibility if the loan
+    /// satisfies all specified conditions.
+    pub conditions: Option<VouchConditions>,
+}
+
+/// Conditions a voucher may attach to a vouch.
+/// All non-None fields must be satisfied for the vouch to count.
+#[contracttype]
+#[derive(Clone)]
+pub struct VouchConditions {
+    /// Maximum loan amount (stroops) this vouch will back. None = no cap.
+    pub max_loan_amount: Option<i128>,
+    /// Minimum loan amount (stroops) this vouch will back. None = no floor.
+    pub min_loan_amount: Option<i128>,
 }
 
 #[contracttype]
