@@ -43,6 +43,8 @@ mod is_eligible_token_filter_test;
 mod vote_slash_auto_execute_test;
 #[cfg(test)]
 mod doc_tests;
+#[cfg(test)]
+mod compliance_test;
 
 // ── Storage Keys ──────────────────────────────────────────────────────────────
 
