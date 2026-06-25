@@ -1521,6 +1521,18 @@ impl QuorumCreditContract {
         vouch::emergency_vouch(env, voucher, borrower, stake, token)
     }
 
+    // ── Issue #864: Multi-token Stake Aggregation ─────────────────────────────
+
+    /// Total vouched stake for `borrower` across all accepted tokens.
+    pub fn total_vouched_all_tokens(env: Env, borrower: Address) -> Result<i128, ContractError> {
+        vouch::total_vouched_all_tokens(env, borrower)
+    }
+
+    /// Eligibility check using aggregated multi-token stake ≥ `threshold`.
+    pub fn is_eligible_multi_token(env: Env, borrower: Address, threshold: i128) -> bool {
+        vouch::is_eligible_multi_token(env, borrower, threshold)
+    }
+
     pub fn repayment_count(env: Env, borrower: Address) -> u32 {
         loan::repayment_count(env, borrower)
     }
