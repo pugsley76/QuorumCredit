@@ -995,6 +995,71 @@ pub fn revoke_delegation(
         let result = client.total_vouched(&borrower);
         assert_eq!(result, 3_500_000);
     }
+/// Issue #863: Admin grants a one-time emergency cooldown bypass to a voucher.
+/// Supports emergency refinancing where a borrower urgently needs additional
+/// backing before the normal 24-hour cooldown expires.
+pub fn set_emergency_cooldown_bypass(
+    env: Env,
+    admin_signers: Vec<Address>,
+    voucher: Address,
+    enabled: bool,
+) -> Result<(), ContractError> {
+    require_admin_approval(&env, &admin_signers);
+    env.storage()
+        .persistent()
+        .set(&DataKey::EmergencyCooldownBypass(voucher), &enabled);
+    Ok(())
+}
+
+/// Issue #863: Query whether an emergency cooldown bypass is active for a voucher.
+pub fn has_emergency_cooldown_bypass(env: Env, voucher: Address) -> bool {
+    env.storage()
+        .persistent()
+        .get(&DataKey::EmergencyCooldownBypass(voucher))
+        .unwrap_or(false)
+}
+
+/// Issue #863: Vouch with emergency cooldown bypass.
+/// Requires a prior admin-granted bypass. The bypass is consumed on success.
+pub fn emergency_vouch(
+    env: Env,
+    voucher: Address,
+    borrower: Address,
+    stake: i128,
+    token: Address,
+) -> Result<(), ContractError> {
+    voucher.require_auth();
+    require_not_thawing(&env)?;
+
+    let bypass_key = DataKey::EmergencyCooldownBypass(voucher.clone());
+    let has_bypass: bool = env
+        .storage()
+        .persistent()
+        .get(&bypass_key)
+        .unwrap_or(false);
+
+    if !has_bypass {
+        return Err(ContractError::EmergencyBypassNotAuthorised);
+    }
+
+    // Consume the bypass before proceeding (single-use, prevents replay).
+    env.storage().persistent().set(&bypass_key, &false);
+
+    let cfg = VouchConfig::load(&env);
+    let cfg_bypass = VouchConfig {
+        whitelist_enabled: cfg.whitelist_enabled,
+        min_stake: cfg.min_stake,
+        vouch_cooldown_secs: 0,
+        max_vouchers_per_borrower: cfg.max_vouchers_per_borrower,
+    };
+
+    crate::helpers::check_rate_limit(&env, &voucher)?;
+    crate::helpers::register_borrower_if_needed(&env, &borrower);
+    let (token_client, vouches) =
+        validate_vouch(&env, &cfg_bypass, &voucher, &borrower, stake, &token, None)?;
+    commit_vouch(&env, &token_client, voucher, borrower, stake, token, vouches, None)
+}
+
 pub fn set_vouch_expiry(
     _env: Env,
     _voucher: Address,

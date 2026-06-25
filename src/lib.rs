@@ -19,6 +19,10 @@ pub mod cache;
 pub mod error_response;
 pub mod versioning;
 pub mod cross_chain;
+/// Issue #867: Cross-Collateral Vouch Pools
+pub mod collateral_pool;
+/// Issue #868: Gradual Unstaking
+pub mod gradual_unstake;
 
 pub use errors::ContractError;
 pub use types::*;
@@ -1487,6 +1491,34 @@ impl QuorumCreditContract {
 
     pub fn total_vouched(env: Env, borrower: Address) -> Result<i128, ContractError> {
         vouch::total_vouched(env, borrower)
+    }
+
+    // ── Issue #863: Vouch Cooldown Bypass ─────────────────────────────────────
+
+    /// Admin grants a one-time emergency cooldown bypass to a voucher.
+    pub fn set_emergency_cooldown_bypass(
+        env: Env,
+        admin_signers: Vec<Address>,
+        voucher: Address,
+        enabled: bool,
+    ) -> Result<(), ContractError> {
+        vouch::set_emergency_cooldown_bypass(env, admin_signers, voucher, enabled)
+    }
+
+    /// Query whether an emergency cooldown bypass is active for a voucher.
+    pub fn has_emergency_cooldown_bypass(env: Env, voucher: Address) -> bool {
+        vouch::has_emergency_cooldown_bypass(env, voucher)
+    }
+
+    /// Vouch with emergency cooldown bypass (single-use, admin-granted).
+    pub fn emergency_vouch(
+        env: Env,
+        voucher: Address,
+        borrower: Address,
+        stake: i128,
+        token: Address,
+    ) -> Result<(), ContractError> {
+        vouch::emergency_vouch(env, voucher, borrower, stake, token)
     }
 
     pub fn repayment_count(env: Env, borrower: Address) -> u32 {

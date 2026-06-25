@@ -439,6 +439,9 @@ pub enum DataKey {
     SyndicationRepaymentCounter(u64), // syndication_id → counter
     /// Reputation NFT badge for excellent credit tier: borrower → ReputationNFTRecord
     ReputationNFTBadge(Address),
+    // ── Issue #863: Vouch Cooldown Bypass ────────────────────────────────────
+    /// Per-voucher emergency bypass flag: voucher → bool
+    EmergencyCooldownBypass(Address),
 }
 
 // ── Governance ────────────────────────────────────────────────────────────────
