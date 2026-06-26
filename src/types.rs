@@ -442,6 +442,26 @@ pub enum DataKey {
     SyndicationRepaymentCounter(u64), // syndication_id → counter
     /// Reputation NFT badge for excellent credit tier: borrower → ReputationNFTRecord
     ReputationNFTBadge(Address),
+    /// Risk threshold proposals (risk_id → RiskThresholdProposal)
+    RiskThresholdProposal(u64),
+    /// Risk threshold proposal counter
+    RiskThresholdCounter,
+    /// Risk threshold votes (risk_id, voter) → bool
+    RiskThresholdVote(u64, Address),
+    /// Fee structure proposals (fee_id → FeeStructureProposal)
+    FeeStructureProposal(u64),
+    /// Fee structure proposal counter
+    FeeStructureCounter,
+    /// Fee structure votes (fee_id, voter) → bool
+    FeeStructureVote(u64, Address),
+    /// Withdrawal timelocks (lock_id → WithdrawalTimelock)
+    WithdrawalTimelock(u64),
+    /// Withdrawal timelock counter
+    WithdrawalTimelockCounter,
+    /// Cross-chain proposal syncs (sync_id → CrossChainProposalSync)
+    CrossChainProposalSync(u64),
+    /// Cross-chain sync counter
+    CrossChainSyncCounter,
 }
 
 // ── Governance ────────────────────────────────────────────────────────────────
@@ -1423,6 +1443,71 @@ pub struct CachedVouchesRecord {
 pub struct CachedConfigRecord {
     pub data: Config,
     pub cached_at: u64,
+}
+
+// ── Risk Assessment Voting (Issue #903) ──────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone)]
+pub struct RiskThresholdProposal {
+    pub id: u64,
+    pub proposer: Address,
+    pub min_risk_threshold: u32,  // basis points (e.g., 5000 = 50%)
+    pub max_risk_threshold: u32,  // basis points
+    pub votes_for: i128,
+    pub votes_against: i128,
+    pub status: GovernanceProposalStatus,
+    pub created_at: u64,
+    pub eta: u64,
+}
+
+// ── Fee Structure Voting (Issue #904) ──────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone)]
+pub struct FeeStructureProposal {
+    pub id: u64,
+    pub proposer: Address,
+    pub origination_fee_bps: u32,
+    pub repayment_fee_bps: u32,
+    pub late_fee_bps: u32,
+    pub votes_for: i128,
+    pub votes_against: i128,
+    pub status: GovernanceProposalStatus,
+    pub created_at: u64,
+    pub eta: u64,
+}
+
+// ── Withdrawal Timelock (Issue #905) ───────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone)]
+pub struct WithdrawalTimelock {
+    pub id: u64,
+    pub voucher: Address,
+    pub borrower: Address,
+    pub amount: i128,
+    pub token: Address,
+    pub eta: u64,
+    pub executed: bool,
+    pub cancelled: bool,
+}
+
+// ── Cross-Chain Proposal Sync (Issue #906) ────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone)]
+pub struct CrossChainProposalSync {
+    pub id: u64,
+    pub source_chain: String,
+    pub target_chains: Vec<String>,
+    pub proposal_type: String,  // "risk", "fee", "timelock"
+    pub proposal_data: Vec<u8>,
+    pub votes_required: u32,
+    pub votes_received: u32,
+    pub status: GovernanceProposalStatus,
+    pub created_at: u64,
+    pub eta: u64,
 }
 
 // ── Error Standardization (Issue #725) ────────────────────────────────────────
