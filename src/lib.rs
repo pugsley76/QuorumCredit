@@ -9,6 +9,7 @@ pub mod helpers;
 pub mod insurance;
 pub mod loan;
 pub mod partial_repayment;
+pub mod periodic_payments;
 pub mod reputation;
 pub mod rbac;
 pub mod syndication;
@@ -1579,5 +1580,30 @@ impl QuorumCreditContract {
 
     pub fn get_voucher_group_ids(env: Env, voucher: Address) -> Vec<u64> {
         vouch_groups::get_voucher_group_ids(env, voucher)
+    }
+
+    // ── Periodic Payments ────────────────────────────────────────────────────
+
+    pub fn set_periodic_payment(
+        env: Env,
+        caller: Address,
+        loan_id: u64,
+        schedule_type: ScheduleType,
+        period_count: u32,
+        period_interest_bps: u32,
+    ) -> Result<(), ContractError> {
+        periodic_payments::set_periodic_payment(env, caller, loan_id, schedule_type, period_count, period_interest_bps)
+    }
+
+    pub fn make_periodic_payment(env: Env, borrower: Address, loan_id: u64, payment: i128) -> Result<(), ContractError> {
+        periodic_payments::make_periodic_payment(env, borrower, loan_id, payment)
+    }
+
+    pub fn get_periodic_payment_config(env: Env, loan_id: u64) -> Option<PeriodicPaymentConfig> {
+        periodic_payments::get_periodic_payment_config(env, loan_id)
+    }
+
+    pub fn get_periodic_payment_status(env: Env, loan_id: u64) -> Option<PeriodicPaymentStatus> {
+        periodic_payments::get_periodic_payment_status(env, loan_id)
     }
 }

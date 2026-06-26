@@ -451,6 +451,8 @@ pub enum DataKey {
     VouchGroup(u64), // group_id -> VouchGroup
     VouchGroupCounter, // u64 monotonically increasing group ID counter
     VoucherGroupIds(Address), // voucher -> Vec<u64>
+    PeriodicPaymentConfig(u64), // loan_id -> PeriodicPaymentConfig
+    PeriodicPaymentStatus(u64), // loan_id -> PeriodicPaymentStatus
 }
 
 // ── Governance ────────────────────────────────────────────────────────────────
@@ -1486,4 +1488,35 @@ pub struct VouchGroup {
     pub name: soroban_sdk::String,
     pub vouchers: Vec<Address>,
     pub created_at: u64,
+}
+
+// ── Periodic Payments ──────────────────────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ScheduleType {
+    Weekly,
+    BiWeekly,
+    Monthly,
+    Quarterly,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub struct PeriodicPaymentConfig {
+    pub schedule_type: ScheduleType,
+    pub period_count: u32,
+    pub period_interest_bps: u32,
+    pub periods_completed: u32,
+    pub enabled: bool,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub struct PeriodicPaymentStatus {
+    pub loan_id: u64,
+    pub config: PeriodicPaymentConfig,
+    pub next_period_due: u64,
+    pub last_payment_timestamp: u64,
+    pub total_period_interest_paid: i128,
 }
