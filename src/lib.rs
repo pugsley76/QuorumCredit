@@ -72,6 +72,15 @@ mod dynamic_quorum_adjustment_test;
 #[cfg(test)]
 mod conditional_vote_delegation_test;
 
+#[cfg(test)]
+mod risk_assessment_voting_test;
+#[cfg(test)]
+mod fee_structure_voting_test;
+#[cfg(test)]
+mod withdrawal_timelock_test;
+#[cfg(test)]
+mod cross_chain_proposal_sync_test;
+
 use crate::helpers::{
     config, get_active_loan_record, has_active_loan, loan_status as helper_loan_status,
     require_allowed_token, require_not_paused,
