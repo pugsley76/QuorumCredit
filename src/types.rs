@@ -442,6 +442,7 @@ pub enum DataKey {
     SyndicationRepaymentCounter(u64), // syndication_id → counter
     /// Reputation NFT badge for excellent credit tier: borrower → ReputationNFTRecord
     ReputationNFTBadge(Address),
+    CustomAttributes(Address), // address -> Vec<AttributeEntry>
 }
 
 // ── Governance ────────────────────────────────────────────────────────────────
@@ -1438,4 +1439,13 @@ pub struct ErrorResponse {
     pub details: Option<soroban_sdk::String>,
     /// Timestamp when the error occurred.
     pub timestamp: u64,
+}
+
+// ── Custom Attributes ──────────────────────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone)]
+pub struct AttributeEntry {
+    pub key: soroban_sdk::String,
+    pub value: soroban_sdk::String,
 }

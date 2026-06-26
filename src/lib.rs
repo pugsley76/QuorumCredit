@@ -1,6 +1,7 @@
 #![no_std]
 
 pub mod admin;
+pub mod attributes;
 pub mod credit_score;
 pub mod errors;
 pub mod governance;
@@ -1526,5 +1527,19 @@ impl QuorumCreditContract {
 
     pub fn is_bridge_nonce_used(env: Env, origin_chain: u32, nonce: u64) -> bool {
         cross_chain::is_bridge_nonce_used(env, origin_chain, nonce)
+    }
+
+    // ── Custom Attributes ────────────────────────────────────────────────────
+
+    pub fn set_attribute(env: Env, caller: Address, key: soroban_sdk::String, value: soroban_sdk::String) -> Result<(), ContractError> {
+        attributes::set_attribute(env, caller, key, value)
+    }
+
+    pub fn get_attributes(env: Env, caller: Address) -> Vec<AttributeEntry> {
+        attributes::get_attributes(env, caller)
+    }
+
+    pub fn remove_attribute(env: Env, caller: Address, key: soroban_sdk::String) -> Result<(), ContractError> {
+        attributes::remove_attribute(env, caller, key)
     }
 }
